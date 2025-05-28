@@ -99,10 +99,10 @@ void draw() {
   
   final float viewX = mouse[x] - camera[x];
   final float viewY = mouse[y] - camera[y];
-  final float viewL = (float) Math.sqrt(viewX * viewX + viewY * viewY);
+  final float viewL = sqrt(viewX * viewX + viewY * viewY);
   final float inverseViewL = isZero(viewL, 0.0001) ? 0 : 1 / viewL;
-  final double viewAngle = Math.acos(viewX * inverseViewL);
-  final double marchAngle = mouse[y] < camera[y] ? TWO_PI - viewAngle : viewAngle;
+  final float viewAngle = acos(viewX * inverseViewL);
+  final float marchAngle = mouse[y] < camera[y] ? TWO_PI - viewAngle : viewAngle;
       //System.out.println("viewX=%f,viewY=%f,viewL=%f".formatted(viewX, viewY, viewL));
   
   if (keys['r'] || keys['R']) rand = (int) random(0xffffffff, 0x7fffffff);

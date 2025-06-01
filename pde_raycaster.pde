@@ -36,19 +36,36 @@ void setup() {
   rand = rands[(int) random(0, rands.length)];
   if (rand == 0) rand = 1;
   consolas = createFont("Consolas", 32);
-  world = new SquareGrid(32, new int[][]{
-    {0,  S,  S,  S,  S,  S,  S,  S,  S,  S, 0},
-    {E, NW, SN,  N,  N,  N,  N,  N, SN, NE, W},
-    {E, EW,  0,  W,  0,  0,  0,  E,  0, WE, W},
-    {E,  W,  N,  0,  0,  S,  0,  0,  N,  E, W},
-    {E,  W,  0,  0, SE,  0, SW,  0,  0,  E, W},
-    {E,  W,  0,  E,  0,  0,  0,  W,  0,  E, W},
-    {E,  W,  0,  0, NE,  0, NW,  0,  0,  E, W},
-    {E,  W,  S,  0,  0,  N,  0,  0,  S,  E, W},
-    {E, EW,  0,  W,  0,  0,  0,  E,  0, WE, W},
-    {E, SW, NS,  S,  S,  S,  S,  S, NS, SE, W},
-    {0,  N,  N,  N,  N,  N,  N,  N,  N,  N, 0},
-  });
+  final Map<Integer, Integer> edgeColors = Map.of(
+    1, #ff0000,
+    2, #00ff00,
+    4, #0000ff,
+    8, #ff00ff
+  );
+  world = new SquareGrid(
+    32,
+    Map.<Surface, Integer>of(surface(0, 0, E), #ff0000, surface(0, 0, S), #00ff00, surface(0, 0, W), #0000ff, surface(0, 0, N), #ff00ff),
+    new int[][]{
+      {0,  S,  S,  S,  S,  S,  S,  S,  S,  S, 0},
+      {E, NW, SN,  N,  N,  N,  N,  N, SN, NE, W},
+      {E, EW,  0,  W,  0,  0,  0,  E,  0, WE, W},
+      {E,  W,  N,  0,  0,  S,  0,  0,  N,  E, W},
+      {E,  W,  0,  0, SE,  0, SW,  0,  0,  E, W},
+      {E,  W,  0,  E,  0,  0,  0,  W,  0,  E, W},
+      {E,  W,  0,  0, NE,  0, NW,  0,  0,  E, W},
+      {E,  W,  S,  0,  0,  N,  0,  0,  S,  E, W},
+      {E, EW,  0,  W,  0,  0,  0,  E,  0, WE, W},
+      {E, SW, NS,  S,  S,  S,  S,  S, NS, SE, W},
+      {0,  N,  N,  N,  N,  N,  N,  N,  N,  N, 0},
+    }//,
+    //IntUnaryOperator.identity()
+    //cell -> cell | ((
+    //  edgeColors.getOrDefault(cell & 1, 0) |
+    //  edgeColors.getOrDefault(cell & 2, 0) |
+    //  edgeColors.getOrDefault(cell & 4, 0) |
+    //  edgeColors.getOrDefault(cell & 8, 0)
+    //) << 8)
+  );
     // hint(ENABLE_KEY_REPEAT);
 
     //if (g.isGL()) {
@@ -58,7 +75,6 @@ void setup() {
     //canvas = createGraphics(640, 480, P3D);
 }
 
-  // 250508 >>
 void keyPressed() {
   if (key != CODED) keys[key] = true;
 }
@@ -85,7 +101,7 @@ void gradient() {
   pop();
 }
 
-void draw() {
+void draw() {try{
   background(#10252575);
   gradient();
   stroke(255);
@@ -97,13 +113,13 @@ void draw() {
   mouseY - height / 2
   };
   
-  final float viewX = mouse[x] - camera[x];
-  final float viewY = mouse[y] - camera[y];
+  final float xA = camera[x], yA = camera[y], xB = mouse[x], yB = mouse[y];
+  final float viewX = xB - xA;
+  final float viewY = yB - yA;
   final float viewL = sqrt(viewX * viewX + viewY * viewY);
   final float inverseViewL = isZero(viewL, 0.0001) ? 0 : 1 / viewL;
   final float viewAngle = acos(viewX * inverseViewL);
-  final float marchAngle = mouse[y] < camera[y] ? TWO_PI - viewAngle : viewAngle;
-      //System.out.println("viewX=%f,viewY=%f,viewL=%f".formatted(viewX, viewY, viewL));
+  final float marchAngle = yB < yA ? TWO_PI - viewAngle : viewAngle;
   
   if (keys['r'] || keys['R']) rand = (int) random(0xffffffff, 0x7fffffff);
   push();
@@ -123,39 +139,25 @@ void draw() {
     vr[y] + vl[y] + vd[y] + vu[y]
   };
   
-  camera[x] += 2.5f * (viewX * inverseViewL * (vd[x] + vu[x]) + viewY * inverseViewL * (vl[x] + vr[x]));//(
-    //(keys['d'] || keys['D'] ?  1 : 0) +
-    //(keys['a'] || keys['A'] ? -1 : 0));
-  camera[y] += 2.5f * (viewY * inverseViewL * (vd[y] + vu[y]) + viewX * inverseViewL * (vl[y] + vr[y]));//(
-    //(keys['s'] || keys['S'] ?  1 : 0) +
-    //(keys['w'] || keys['W'] ? -1 : 0));
-  // << 250508
+  camera[x] += 2.5f * (viewX * inverseViewL * (vd[x] + vu[x]) + viewY * inverseViewL * (vl[x] + vr[x]));
+  camera[y] += 2.5f * (viewY * inverseViewL * (vd[y] + vu[y]) + viewX * inverseViewL * (vl[y] + vr[y]));
       
       beginShape(LINES);
-      //vertex(endX + width / 2, 100, depth / 100f);
-      //vertex(endX + width / 2, height - 100, depth / 100f);
       vertex(camera[x] + width / 2, camera[y] + height / 2);
       vertex(camera[x] + width / 2 + viewX, camera[y] + height / 2 + viewY);
       endShape();
       
       //System.out.println("ticks=" + ticks);
-      System.out.println("camera=[%f,%f]".formatted(camera[x], camera[y]));
+      //System.out.println("camera=[%f,%f]".formatted(camera[x], camera[y]));
   $(() -> {
-  // 250508 >>
-    view((float) marchAngle, camera[x], camera[y], world, hit -> {
+    view((float) marchAngle, camera[x], camera[y], 25, world, column -> {
+      Step hit = column.step;
       final float startX = camera[x];
       final float startY = camera[y];
       final float endX = hit.x + hit.xHitOffset;
       final float endY = hit.y + hit.yHitOffset;
       final float depth = dist(startX, startY, endX, endY);
-      //final int pizzaz = (ticks & 0xff) << 16 | (ticks & 0xff) << 8 | (ticks & 0xff);
-      final int pizzaz = contrast(hit.edgeSeen, #ff0000, #00ff00, #0000ff, #ff00ff, #00ffff);
-      //final int shade = (int) (fade(pizzaz, depth * 0.01)) | 0xff000000; // fade to black
-      //final int shade = (int) ((depth * (#ffffff & hit.edgeSeen))) | 0xff000000; // metallic
-      //final int shade = (fade((pizzaz + (int) (depth * (#ffffff & hit.edgeSeen))) / 2, depth * 0.01)) | 0xff000000; // ftb + metallic
-      final int shade = (int) (depth * #ffffff + 0*ticks * hit.edgeSeen) | 0xff000000; // hdr
-      //if (hit.edgeSeen != 0)
-      //System.out.println("hit.edgeSeen == " + hit.edgeSeen);
+      final int shade = (int) (depth * #ffffff*0) | 0xff000000 | (column.surface + 0*world.getMaterial(0, 0, hit.edgeSeen));//(hit.edgeSeen >>> 8); // hdr
       
       stroke(#25ffffff);
       beginShape(LINES);
@@ -168,7 +170,6 @@ void draw() {
       stroke((shade + ticks / (ticks * rand + 1)) + rand | #ff000000);
       vertex(hit.viewportColumn, 10000 / depth + height / 2);
       endShape();
-  // << 250508
     });
     
     view((float) marchAngle, camera[x], camera[y], world, (index, isColumn) -> {
@@ -200,5 +201,5 @@ void draw() {
     });
   });
     
-  ticks++;
+  ticks++;}catch(NullPointerException e){e.printStackTrace(); throw e;}
 }

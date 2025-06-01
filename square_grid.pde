@@ -1,5 +1,6 @@
 import java.util.Arrays;
 import java.util.function.Predicate;
+import java.util.function.IntUnaryOperator;
 
 final int EAST_VISIBLE = 1;
 final int SOUTH_VISIBLE = 2;
@@ -24,21 +25,59 @@ int toIndex(int cell, int length) {
     ? 0
     : cell + length / 2;
 }
+
+class Surface {
+  //final int x, y;
+  final int edge;
+  Surface(/*int x, int y,*/ int edge) {
+    //this.x = x;
+    //this.y = y;
+    this.edge = edge;
+  }
+  
+  //int hashCode() {return Objects.hash(x, y, edge);}
+  int hashCode() {return edge;}
+  boolean equals(Object other) {
+    final Surface surface = other != null && Surface.class.equals(other.getClass()) ? (Surface) other : null;
+    return surface == this || surface != null && surface.edge == this.edge;// && surface.x == this.x && surface.y == this.y; 
+  }
+}
+
+Surface surface(int x, int y, int edge) {return new Surface(/*x, y,*/ edge);}
     
 class SquareGrid {
   final float scale;
   final int width, height;
+  final Map<Surface, Integer> palette;
   final int[][] cells;
   
-  SquareGrid(float scale, int width, int height, int[][] cells) {
+  //SquareGrid(float scale, int width, int height, Map<Integer, Integer> palette, int[][] cells, Function<Surface, Integer> mods) {
+  //  this(scale, width, height, palette, cells);
+  //  for (int i = 0; i < height; i++) {
+  //    for (int j = 0; j < width; j++) {
+  //      cells[i][j] = mods.apply(surface(j, i, cells[i][j]));
+  //    }
+  //  }
+  //}
+  
+  SquareGrid(float scale, int width, int height, Map<Surface, Integer> palette, int[][] cells) {
     this.scale = scale;
     this.width = width;
     this.height = height;
+    this.palette = palette;
     this.cells = cells;
   }
   
-  SquareGrid(float scale, int[][] cells) {
-    this(scale, Arrays.stream(cells).mapToInt(r -> r.length).min().orElse(0), cells.length, cells);
+  SquareGrid(float scale, Map<Surface, Integer> palette, int[][] cells) {
+    this(scale, Arrays.stream(cells).mapToInt(r -> r.length).min().orElse(0), cells.length, palette, cells);
+  }
+  
+  //SquareGrid(float scale, Map<Integer, Integer> palette, int[][] cells) {
+  //  this(scale, palette, cells, (v, k) -> v);
+  //}
+  
+  color getMaterial(int x, int y, int edge) {
+    return palette.get(surface(x, y, edge));
   }
   
   float scaledWidth() {
@@ -101,26 +140,17 @@ class SquareGrid {
   int rowAt(float y) {
     return at(y, height);
   }
-  
-  boolean hasNext(Step step) {
-    final int xCell = this.columnAt(step.x);
-    final int yCell = this.rowAt(step.y);
-    final int columnIndex = this.columnToIndex(xCell);
-    final int rowIndex = this.rowToIndex(yCell);
-    
-    return (columnIndex | rowIndex) < 0 || columnIndex >= this.width || rowIndex >= this.height;
-  }
 
-  Step nextStep(float angle, float x, float y, int viewportColumn, Step previous, Predicate<Step> prerequisite) {
+  Step nextStep(float angle, float x, float y, int viewportColumn, int depth) { //, Step previous, Predicate<Step> prerequisite) {
     final float coterminal = coterminal(angle, 1000f);
     final int xCell = this.columnAt(x);
     final int yCell = this.rowAt(y);
     final int columnIndex = this.columnToIndex(xCell);
     final int rowIndex = this.rowToIndex(yCell);
     
-    if (!prerequisite.test(previous)) {//(columnIndex | rowIndex) < 0 || columnIndex >= this.width || rowIndex >= this.height) {
-      return null;
-    }
+    //if (!prerequisite.test(previous)) {//(columnIndex | rowIndex) < 0 || columnIndex >= this.width || rowIndex >= this.height) {
+    //  return null;
+    //}
     
     final float xLocal = this.xLocal(x);
     final float yLocal = this.yLocal(y);
@@ -175,6 +205,7 @@ class SquareGrid {
         break;
         default: throw new IllegalStateException("Unexpected value: " + edgeCrossed.charAt(0));
     };
+    final int cell = (columnIndex | rowIndex) < 0 || columnIndex >= this.width || rowIndex >= this.height ? 0 : this.cells[rowIndex][columnIndex];
     //return Optional.<Step>of(
       return new Step(
         coterminal,
@@ -185,9 +216,10 @@ class SquareGrid {
         yIncrement,
         edgeInterceptScalars.get(edgeCrossed) * marchAngleAdjacent * marchIncrement,
         edgeInterceptScalars.get(edgeCrossed) * marchAngleOpposite * marchIncrement,
-        visibilityByEdgeInitial & ((columnIndex | rowIndex) < 0 || columnIndex >= this.width || rowIndex >= this.height ? 0 : this.cells[rowIndex][columnIndex]),
+        visibilityByEdgeInitial & cell,// | (cell & ~0xf),
         viewportColumn,
-        previous
+        depth
+        //previous
       );
     //);
   }

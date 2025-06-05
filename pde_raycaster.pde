@@ -1,5 +1,6 @@
 
 PFont consolas;
+PGraphics minimap;
 SquareGrid world;
 final float[] camera = new float[2];
 final boolean[] keys = new boolean[65536];
@@ -17,9 +18,8 @@ int rand = 0;
  * that point. For instance, do not use loadImage() inside settings(). The settings() method runs "passively" to set
  * a few variables, compared to the setup() command that call commands in the Processing API."
  */
-void settings() {
-  size(480, 360, P3D);
-}
+//void settings() {
+//}
 
 /**
  * "The setup() function is run once, when the program starts. It's used to define initial environment properties
@@ -32,6 +32,10 @@ void settings() {
  * Note: Variables declared within setup() are not accessible within other functions, including draw()."
  */
 void setup() {
+  size(480, 360, P3D);
+  textureMode(NORMAL);
+    hint(ENABLE_DEPTH_TEST);
+    hint(ENABLE_DEPTH_SORT);
   final int[] rands = new int[]{340345216, 525274240, 1835220480};
   rand = rands[(int) random(0, rands.length)];
   if (rand == 0) rand = 1;
@@ -72,7 +76,7 @@ void setup() {
     //    ((PGraphicsOpenGL) g).textureSampling(2);
     //}
 
-    //canvas = createGraphics(640, 480, P3D);
+    minimap = createGraphics(480, 360, P2D);
 }
 
 void keyPressed() {
@@ -101,7 +105,8 @@ void gradient() {
   pop();
 }
 
-void draw() {try{
+void draw() {
+  push();try{
   background(#10252575);
   gradient();
   stroke(255);
@@ -125,7 +130,7 @@ void draw() {try{
   push();
   fill(#000000);
   textFont(consolas);
-  text("rand=" + rand, 25, 25);
+  text("rand=" + rand, 25, 25, 1);
   pop();
   
   //direction of movement == -view
@@ -142,14 +147,49 @@ void draw() {try{
   camera[x] += 2.5f * (viewX * inverseViewL * (vd[x] + vu[x]) + viewY * inverseViewL * (vl[x] + vr[x]));
   camera[y] += 2.5f * (viewY * inverseViewL * (vd[y] + vu[y]) + viewX * inverseViewL * (vl[y] + vr[y]));
       
-      beginShape(LINES);
-      vertex(camera[x] + width / 2, camera[y] + height / 2);
-      vertex(camera[x] + width / 2 + viewX, camera[y] + height / 2 + viewY);
-      endShape();
-      
       //System.out.println("ticks=" + ticks);
       //System.out.println("camera=[%f,%f]".formatted(camera[x], camera[y]));
+    
   $(() -> {
+    minimap.beginDraw();
+    minimap.clear();//.background(#00000000);
+    minimap.stroke(255);
+    
+    minimap.beginShape(LINES);
+    minimap.vertex(camera[x] + width / 2, camera[y] + height / 2);
+    minimap.vertex(camera[x] + width / 2 + viewX, camera[y] + height / 2 + viewY);
+    minimap.endShape();
+    
+    view((float) marchAngle, camera[x], camera[y], world, (index, isColumn) -> {
+      //minimap.beginDraw();
+      minimap.push();
+      minimap.beginShape();
+      
+      if (isColumn) {
+        final int c = index;
+        
+        minimap.stroke(#55ffffff);
+        minimap.vertex(width / 2 - world.scaledWidth() / 2 + c * world.scale, height / 2 - world.scaledHeight() / 2);
+        minimap.stroke(#55000000);
+        minimap.vertex(width / 2 - world.scaledWidth() / 2 + c * world.scale, height / 2);
+        minimap.stroke(#55ffffff);
+        minimap.vertex(width / 2 - world.scaledWidth() / 2 + c * world.scale, height / 2 + world.scaledHeight() / 2);
+      } else {
+        final int r = index;
+        
+        minimap.stroke(#55ffffff);
+        minimap.vertex(width / 2 - world.scaledWidth() / 2, height / 2 - world.scaledHeight() / 2 + r * world.scale);
+        minimap.stroke(#55000000);
+        minimap.vertex(width / 2, height / 2 - world.scaledHeight() / 2 + r * world.scale);
+        minimap.stroke(#55ffffff);
+        minimap.vertex(width / 2 + world.scaledWidth() / 2, height / 2 - world.scaledHeight() / 2 + r * world.scale);
+      }
+      
+      minimap.endShape();
+      minimap.pop();
+      //minimap.endDraw();
+    });
+    
     view((float) marchAngle, camera[x], camera[y], 25, world, column -> {
       Step hit = column.step;
       final float startX = camera[x];
@@ -157,49 +197,32 @@ void draw() {try{
       final float endX = hit.x + hit.xHitOffset;
       final float endY = hit.y + hit.yHitOffset;
       final float depth = dist(startX, startY, endX, endY);
-      final int shade = (int) (depth * #ffffff*0) | 0xff000000 | (column.surface + 0*world.getMaterial(0, 0, hit.edgeSeen));//(hit.edgeSeen >>> 8); // hdr
+      final int shade = (int) (depth*0 * #ffffff*0) | 0xff000000 | (column.surface + 0*world.getMaterial(0, 0, hit.edgeSeen));//(hit.edgeSeen >>> 8); // hdr
       
-      stroke(#25ffffff);
-      beginShape(LINES);
-      vertex(startX + width / 2, startY + height / 2);
-      vertex(  endX + width / 2,   endY + height / 2);
-      endShape();
       beginShape(LINES);
       stroke(shade);
-      vertex(hit.viewportColumn, -10000 / depth + height / 2);
+      vertex(hit.viewportColumn, -10000 / depth + height / 2, 0);
       stroke((shade + ticks / (ticks * rand + 1)) + rand | #ff000000);
-      vertex(hit.viewportColumn, 10000 / depth + height / 2);
+      vertex(hit.viewportColumn, 10000 / depth + height / 2, 0);
       endShape();
-    });
-    
-    view((float) marchAngle, camera[x], camera[y], world, (index, isColumn) -> {
-      push();
-      beginShape();
       
-      if (isColumn) {
-        final int c = index;
-        
-        stroke(#55ffffff);
-        vertex(width / 2 - world.scaledWidth() / 2 + c * world.scale, height / 2 - world.scaledHeight() / 2);
-        stroke(#55000000);
-        vertex(width / 2 - world.scaledWidth() / 2 + c * world.scale, height / 2);
-        stroke(#55ffffff);
-        vertex(width / 2 - world.scaledWidth() / 2 + c * world.scale, height / 2 + world.scaledHeight() / 2);
-      } else {
-        final int r = index;
-        
-        stroke(#55ffffff);
-        vertex(width / 2 - world.scaledWidth() / 2, height / 2 - world.scaledHeight() / 2 + r * world.scale);
-        stroke(#55000000);
-        vertex(width / 2, height / 2 - world.scaledHeight() / 2 + r * world.scale);
-        stroke(#55ffffff);
-        vertex(width / 2 + world.scaledWidth() / 2, height / 2 - world.scaledHeight() / 2 + r * world.scale);
-      }
-      
-      endShape();
-      pop();
+      minimap.stroke(#25ffffff);
+      minimap.beginShape(LINES);
+      minimap.vertex(startX + width / 2, startY + height / 2);
+      minimap.vertex(  endX + width / 2,   endY + height / 2);
+      minimap.endShape();
     });
+    minimap.endDraw();
+    //image(minimap, 0, 0, 120, 90);
+    beginShape();
+    texture(minimap);
+    vertex(0, 0, 10, 0, 0);//texture uv coordinates are the last two numbers
+    vertex(width, 0, 10, 1, 0);
+    vertex(width, height, 10, 1, 1);
+    vertex(0, height, 10, 0, 1);
+    endShape();
   });
     
   ticks++;}catch(NullPointerException e){e.printStackTrace(); throw e;}
+  pop();
 }

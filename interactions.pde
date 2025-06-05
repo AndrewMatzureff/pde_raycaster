@@ -20,7 +20,7 @@ class Column {
   }
   
   Column superimposed(Column onto) {
-    return new Column(lerpColor(this.surface, onto.surface, 0.5f), onto.step);
+    return new Column(lerpColor(this.surface, onto.surface, 0.75f), onto.step);
   }
 }
 

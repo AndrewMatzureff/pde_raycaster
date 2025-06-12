@@ -1,5 +1,5 @@
 void render(PGraphics pg, float startX, float startY, float pathLength, int pathDepth, Column column) {
-  if (Objects.isNull(column) || pathDepth == -3) {
+  if (Objects.isNull(column) || pathDepth == 3) {
     return;
   }
 

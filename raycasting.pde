@@ -24,7 +24,7 @@ void view(float angle, float x, float y, int depth, SquareGrid world, Consumer<C
   )
     //.parallel()
     .mapToObj(i -> rayFromViewport(angle, x, y, i, width, /*HALF_PI + sin(ticks / 60f) * HALF_PI*/ radians(90), world))
-    .map(r -> new Column(r.column, #ffffff, null, r.cast(depth)))
+    .map(r -> /*new Column(r.column, #ffffff, null,*/ r.cast(depth))//)
     //.peek(System.out::println)
     //.filter(Objects::nonNull)
     //.map(c -> c.superimposed(new Column(c.index, #ffffff, null, null)))

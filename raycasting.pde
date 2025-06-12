@@ -1,16 +1,3 @@
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
-import static java.util.function.Predicate.not;
-
 void view(float angle, float x, float y, SquareGrid world, BiConsumer<Integer, Boolean> view) {
   Stream.of(false, true)
     .map(isColumn -> IntStream.range(0, (isColumn ? world.width : world.height) + 1)
@@ -19,14 +6,14 @@ void view(float angle, float x, float y, SquareGrid world, BiConsumer<Integer, B
 }
 
 void view(float angle, float x, float y, SquareGrid world, Consumer<Step> view) {
-  IntStream.iterate(
-    0,
-    i -> i < width,
-    i -> i + 1
-  )
-    //.parallel()
-    .mapToObj(i -> rayFromViewport(angle, x, y, i, width, /*HALF_PI + sin(ticks / 60f) * HALF_PI*/ radians(90), world))
-    .forEach(r -> r.cast(view));
+  //IntStream.iterate(
+  //  0,
+  //  i -> i < width,
+  //  i -> i + 1
+  //)
+  //  //.parallel()
+  //  .mapToObj(i -> rayFromViewport(angle, x, y, i, width, /*HALF_PI + sin(ticks / 60f) * HALF_PI*/ radians(90), world))
+  //  .forEach(r -> r.cast(view));
 }
 
 void view(float angle, float x, float y, int depth, SquareGrid world, Consumer<Column> view) {
@@ -37,9 +24,10 @@ void view(float angle, float x, float y, int depth, SquareGrid world, Consumer<C
   )
     //.parallel()
     .mapToObj(i -> rayFromViewport(angle, x, y, i, width, /*HALF_PI + sin(ticks / 60f) * HALF_PI*/ radians(90), world))
-    .map(r -> r.cast(depth))
+    .map(r -> new Column(r.column, #ffffff, null, r.cast(depth)))
     //.peek(System.out::println)
-    .filter(Objects::nonNull)
+    //.filter(Objects::nonNull)
+    //.map(c -> c.superimposed(new Column(c.index, #ffffff, null, null)))
     .forEach(view);
 }
 
@@ -65,24 +53,8 @@ class Ray {
     return maybeStep != null && (maybeStep.edgeSeen & 0xff) != 0;//maybeStep == null || maybeStep.edgeSeen != 0 || maybeStep.previous != null && maybeStep.previous.edgeSeen != 0;
   }
   
-  Step nextStep(Step previous, Predicate<Step> hasNext) {
-    return hasNext.test(previous) ? world.nextStep(previous.angle, previous.x + previous.xIncrement, previous.y + previous.yIncrement, previous.viewportColumn, previous.depth - 1) : null;
-  }
-  
   UnaryOperator<Step> nextStep(Predicate<Step> hasNext) {
     return previous -> hasNext.test(previous) ? world.nextStep(previous.angle, previous.x + previous.xIncrement, previous.y + previous.yIncrement, previous.viewportColumn, previous.depth - 1) : null;
-  }
-  
-  void cast(Consumer<Step> view) {
-    Stream.iterate(world.nextStep(angle, x, y, column, 0), Objects::nonNull, nextStep(not(this::isTerminal)))
-      .limit(99)
-      //.filter(Objects::nonNull)
-      //.peek(System.out::println)
-      .reduce((a, b) -> b)
-      .filter(this::isTerminal)
-      //.map(step -> pipeline.apply(step))
-      //.ifPresent(s -> {System.out.println(s); view.accept(s);});
-      .ifPresent(view);
   }
   
   Column cast(int depth) {
@@ -90,7 +62,9 @@ class Ray {
       .limit(depth)
       .reduce((a, b) -> b)
       .filter(this::isTerminal)
-      .map(new Reflection(world)::interact)
+      .map(reflection(world, column))
+      //.map(col -> col.superimposed(new Column(col.index, #ffffff, null, null)))
+      //.map(Reflection)
       .orElse(null);//background column
       //System.out.println(c);
       return c;

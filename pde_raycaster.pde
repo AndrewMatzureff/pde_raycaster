@@ -191,36 +191,52 @@ void draw() {
     });
     
     view((float) marchAngle, camera[x], camera[y], 25, world, column -> {
-      Step hit = column.step;
-      final float startX = camera[x];
-      final float startY = camera[y];
-      final float endX = hit.x + hit.xHitOffset;
-      final float endY = hit.y + hit.yHitOffset;
-      final float depth = dist(startX, startY, endX, endY);
-      final int shade = (int) (depth*0 * #ffffff*0) | 0xff000000 | (column.surface + 0*world.getMaterial(0, 0, hit.edgeSeen));//(hit.edgeSeen >>> 8); // hdr
-      
-      beginShape(LINES);
-      stroke(shade);
-      vertex(hit.viewportColumn, -10000 / depth + height / 2, 0);
-      stroke((shade + ticks / (ticks * rand + 1)) + rand | #ff000000);
-      vertex(hit.viewportColumn, 10000 / depth + height / 2, 0);
-      endShape();
-      
-      minimap.stroke(#25ffffff);
-      minimap.beginShape(LINES);
-      minimap.vertex(startX + width / 2, startY + height / 2);
-      minimap.vertex(  endX + width / 2,   endY + height / 2);
-      minimap.endShape();
+      //Deque<Column> columns = new LinkedList<>(List.of(column));
+      push();
+      noFill();
+        beginShape();
+        render(this.getGraphics(), camera[x], camera[y], 0, 0, column);
+      //while(!columns.isEmpty()) {
+      //  Step hit = column.step;
+      //  final float startX = camera[x];
+      //  final float startY = camera[y];
+      //  final float endX = hit.x + hit.xHitOffset;
+      //  final float endY = hit.y + hit.yHitOffset;
+      //  final float depth = dist(startX, startY, endX, endY);
+      //  final int shade = (int) (depth*0 * #ffffff*0) | 0xff000000 | (column.surface + 0*world.getMaterial(0, 0, hit.edgeSeen));//(hit.edgeSeen >>> 8); // hdr
+        
+      //  //beginShape(LINES);
+      //  //stroke(shade);
+      //  //vertex(hit.viewportColumn, -10000 / depth + height / 2, 0);
+      //  //stroke((shade + ticks / (ticks * rand + 1)) + rand | #ff000000);
+      //  //vertex(hit.viewportColumn, 10000 / depth + height / 2, 0);
+      //  //endShape();
+        
+      //  stroke(shade);
+      //  vertex(hit.viewportColumn, -10000 / depth + height / 2, 0);
+      //  stroke((shade + ticks / (ticks * rand + 1)) + rand | #ff000000);
+      //  vertex(hit.viewportColumn, 10000 / depth + height / 2, 0);
+        
+      //  columns.pop();
+        
+      //  //minimap.stroke(#25ffffff);
+      //  //minimap.beginShape(LINES);
+      //  //minimap.vertex(startX + width / 2, startY + height / 2);
+      //  //minimap.vertex(  endX + width / 2,   endY + height / 2);
+      //  //minimap.endShape();
+      //}
+        endShape();
+        pop();
     });
     minimap.endDraw();
     //image(minimap, 0, 0, 120, 90);
-    beginShape();
-    texture(minimap);
-    vertex(0, 0, 10, 0, 0);//texture uv coordinates are the last two numbers
-    vertex(width, 0, 10, 1, 0);
-    vertex(width, height, 10, 1, 1);
-    vertex(0, height, 10, 0, 1);
-    endShape();
+    //beginShape();
+    //texture(minimap);
+    //vertex(0, 0, 10, 0, 0);//texture uv coordinates are the last two numbers
+    //vertex(width, 0, 10, 1, 0);
+    //vertex(width, height, 10, 1, 1);
+    //vertex(0, height, 10, 0, 1);
+    //endShape();
   });
     
   ticks++;}catch(NullPointerException e){e.printStackTrace(); throw e;}

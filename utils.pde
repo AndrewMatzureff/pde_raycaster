@@ -1,7 +1,3 @@
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.function.BiFunction;
-
 void $(Runnable runnable) {
   push();
   runnable.run();

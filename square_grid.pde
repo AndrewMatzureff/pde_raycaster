@@ -1,7 +1,3 @@
-import java.util.Arrays;
-import java.util.function.Predicate;
-import java.util.function.IntUnaryOperator;
-
 final int EAST_VISIBLE = 1;
 final int SOUTH_VISIBLE = 2;
 final int WEST_VISIBLE = 4;
